@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Snake Game</title>
+  <link rel="stylesheet" href="snake-game.css" />
+  <script src="snake-game.js" defer></script>
+</head>
+<body>
+  <div id="content">
+    <h2>Snake Game</h2>
+    <canvas id="game-canvas" height="300" width="300"></canvas>
+    
+    <div id="score-and-level">
+      <div id="score-content">
+        <label for="score">Score: </label>
+        <span id="score">0</span>
+      </div>
+
+      <div id="controls-content">
+        <select id="level">
+          <option value="0" selected>Weak</option>
+          <option value="1">Normal</option>
+          <option value="2">Insane</option>
+        </select>
+
+        <div id="play">
+          <div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

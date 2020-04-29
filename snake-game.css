@@ -1,0 +1,45 @@
+* {
+  box-sizing: content-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* set the root em */
+html {
+  font-size: 16px;
+}
+
+#content {
+  text-align: center;
+}
+
+#game-canvas {
+  background-color: #0e0;
+}
+
+#score-and-level {
+  margin: .75rem;
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row;
+}
+
+#controls-content {
+  display: flex;
+  justify-content: space-between;
+}
+
+#level {
+  margin-right: 1rem;
+}
+
+#play {
+  display: flex;
+  align-items: center;
+}
+
+#play > div {
+  border-top: .8rem solid transparent;
+  border-bottom: .8rem solid transparent;
+  border-left: 1.5rem solid rgb(86, 86, 208);
+  background-color: transparent;
+}
