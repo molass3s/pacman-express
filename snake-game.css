@@ -6,10 +6,18 @@
 /* set the root em */
 html {
   font-size: 16px;
+  background-color: #f7f7f7;
 }
 
 #content {
+  display: flex;
+  justify-content: center;
   text-align: center;
+  background-color: #f7f7f7;
+}
+
+#content > div {
+  max-width: 320px;
 }
 
 #game-canvas {
