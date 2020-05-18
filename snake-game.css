@@ -16,13 +16,13 @@ html {
   background-color: #f7f7f7;
 }
 
-#content > div {
+/* #content > div {
   max-width: 320px;
-}
+} */
 
-#game-canvas {
-  background-color: #0e0;
-}
+/* #game-canvas {
+  background-color: #000;
+} */
 
 #score-and-level {
   margin: .75rem;

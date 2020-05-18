@@ -2,16 +2,21 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1
+    user-scalable=no, maximum-scale=1" />
   <title>Snake Game</title>
   <link rel="stylesheet" href="snake-game.css" />
-  <script src="snake-game.js" defer></script>
+  <script src="./control-funcs.js"></script>
+  <script src="./draw-funcs.js"></script>
+  <script src="./snake-game.js" defer></script>
 </head>
 <body>
   <div id="content">
     <div>
       <h1>Snake Game</h1>
-      <canvas id="game-canvas" height="300" width="300"></canvas>
+      <canvas id="game-canvas">
+        <div>You have a seriously outdated browser...</div>
+      </canvas>
       
       <div id="score-and-level">
         <div id="score-content">
