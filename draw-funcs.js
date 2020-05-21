@@ -1,12 +1,31 @@
 const drawFuncs = ((controlFuncs) => {
   let gameCanvas;
   let gameCtx;
+  let gameStarted = false;
 
   // Default constants
   const MOBILE_UNIT_SIZE = 1;
   const MOBILE_WIDTH_HEIGHT = 300;
   const REG_UNIT_SIZE = 2;
   const REG_WIDTH_HEIGHT = 600;
+
+  // Pacman constants
+  // With the exception of the mouth closed constants, these all depend on arc
+  // being drawn counter-clockwise.
+  const LEFT_MOUTH_START = 130;
+  const LEFT_MOUTH_END = 230;
+  const UP_MOUTH_START = 220;
+  const UP_MOUTH_END = 320;
+  const RIGHT_MOUTH_START = 310;
+  const RIGHT_MOUTH_END = 50;
+  const DOWN_MOUTH_START = 40;
+  const DOWN_MOUTH_END = 140;
+  const MOUTH_CLOSED_START = 0;
+  const MOUTH_CLOSED_END = 360;
+  // This value is used to inc or dec mouth angles to create a better animation.
+  const MOUTH_MID_DIFF = 30;
+  // This value is used to inc or dec Pacmans movement on the canvas.
+  const MOVEMENT_DIFF = 5 
 
   // Canvas config
   const canvasConfig = {
@@ -22,16 +41,120 @@ const drawFuncs = ((controlFuncs) => {
     x: REG_WIDTH_HEIGHT / 10, 
     y: REG_WIDTH_HEIGHT / 10, 
     size: 10, 
-    open: true 
+    mouthAnglePosition: {
+      // The default mouth angle position is facing right at the spawn position.
+      x: (REG_WIDTH_HEIGHT / 10) - 5,
+      y: REG_WIDTH_HEIGHT / 10
+    },
+    mouthOpening: false, // Default to false, since mouth is open at start.
+    // There are 3 mouth positions. 0 = fully open, 1 = halfway, and 2 = closed.
+    // Default mouth is fully open.
+    mouthPosition: 0, 
+    direction: 'ArrowRight', // Default to key arrow right.
+    speed: 60, // TODO Gradual speed increase. Default to 60 ms per frame.
+    mouthStart: RIGHT_MOUTH_START, // Default with mouth open, facing right.
+    mouthEnd: RIGHT_MOUTH_END
   };
 
   // Ghost config
   const ghostConfig = {};
 
-  function animate (arrow) {
-      if (controlFuncs.isArrowUp(arrow)) {
-        console.log('arrow up pressed');
+  function animate () {
+    // let currentSpeed = pacmanConfig.speed;
+    // pacmanConfig.speed = currentSpeed < -60 ? 60 : currentSpeed - 10;
+    preDrawPacmanActions();
+    drawPacMan();
+    postDrawPacmanActions();
+    setTimeout(() => { requestAnimationFrame(animate); }, 40);
+    // requestAnimationFrame(animate);
+  }
+
+  // Actions to take right before drawing Pacman. Best to set where Pacman's 
+  // position will be and his expected mouth action.
+  function preDrawPacmanActions () {
+    const direction = pacmanConfig.direction;
+    const mouthPosition = pacmanConfig.mouthPosition;
+
+    if (controlFuncs.isArrowLeft(direction)) {
+      pacmanConfig.x -= MOVEMENT_DIFF;
+      pacmanConfig.mouthAnglePosition.x = pacmanConfig.x + MOVEMENT_DIFF;
+      pacmanConfig.mouthAnglePosition.y = pacmanConfig.y;
+
+      if (mouthPosition === 0) {
+        pacmanConfig.mouthStart = LEFT_MOUTH_START;
+        pacmanConfig.mouthEnd = LEFT_MOUTH_END;
+      } else if (mouthPosition === 1) {
+        pacmanConfig.mouthStart = LEFT_MOUTH_START + MOUTH_MID_DIFF;
+        pacmanConfig.mouthEnd = LEFT_MOUTH_END - MOUTH_MID_DIFF;
       }
+    } else if (controlFuncs.isArrowUp(direction)) {
+      pacmanConfig.y -= MOVEMENT_DIFF;
+      pacmanConfig.mouthAnglePosition.x = pacmanConfig.x;
+      pacmanConfig.mouthAnglePosition.y = pacmanConfig.y + MOVEMENT_DIFF;
+
+      if (mouthPosition === 0) {
+        pacmanConfig.mouthStart = UP_MOUTH_START;
+        pacmanConfig.mouthEnd = UP_MOUTH_END;
+      } else if (mouthPosition === 1) {
+        pacmanConfig.mouthStart = UP_MOUTH_START + MOUTH_MID_DIFF;
+        pacmanConfig.mouthEnd = UP_MOUTH_END - MOUTH_MID_DIFF;
+      }
+    } else if (controlFuncs.isArrowRight(direction)) {
+      pacmanConfig.x += MOVEMENT_DIFF;
+      pacmanConfig.mouthAnglePosition.x = pacmanConfig.x - MOVEMENT_DIFF;
+      pacmanConfig.mouthAnglePosition.y = pacmanConfig.y;
+
+      if (mouthPosition === 0) {
+        pacmanConfig.mouthStart = RIGHT_MOUTH_START;
+        pacmanConfig.mouthEnd = RIGHT_MOUTH_END;
+      } else if (mouthPosition === 1) {
+        pacmanConfig.mouthStart = RIGHT_MOUTH_START + MOUTH_MID_DIFF;
+        pacmanConfig.mouthEnd = RIGHT_MOUTH_END - MOUTH_MID_DIFF;
+      }
+    } else if (controlFuncs.isArrowDown(direction)) {
+      pacmanConfig.y += MOVEMENT_DIFF;
+      pacmanConfig.mouthAnglePosition.x = pacmanConfig.x;
+      pacmanConfig.mouthAnglePosition.y = pacmanConfig.y - MOVEMENT_DIFF;
+
+      if (mouthPosition === 0) {
+        pacmanConfig.mouthStart = DOWN_MOUTH_START;
+        pacmanConfig.mouthEnd = DOWN_MOUTH_END;
+      } else if (mouthPosition === 1) {
+        pacmanConfig.mouthStart = DOWN_MOUTH_START + MOUTH_MID_DIFF;
+        pacmanConfig.mouthEnd = DOWN_MOUTH_END - MOUTH_MID_DIFF;
+      }
+    }
+
+    if (mouthPosition === 2) {
+      pacmanConfig.mouthStart = MOUTH_CLOSED_START;
+      pacmanConfig.mouthEnd = MOUTH_CLOSED_END;
+    }
+  }
+
+  // Actions to take after drawing Pacman
+  function postDrawPacmanActions () {
+    const mouthPos = pacmanConfig.mouthPosition;
+    const mouthOpening = pacmanConfig.mouthOpening;
+    if (!mouthOpening && mouthPos < 2) {
+      pacmanConfig.mouthPosition += 1;
+    } else if (mouthOpening && mouthPos > 0) {
+      pacmanConfig.mouthPosition -= 1;
+    } else {
+      pacmanConfig.mouthOpening = !mouthOpening;
+    }
+  }
+
+  function drawPacMan () {
+    const startAngle = (Math.PI/180) * pacmanConfig.mouthStart;
+    const endAngle = (Math.PI/180) * pacmanConfig.mouthEnd;
+    const mouthAngle = pacmanConfig.mouthAnglePosition;
+    gameCtx.beginPath();
+    gameCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    gameCtx.fillRect(0, 0, canvasConfig.width, canvasConfig.height);
+    gameCtx.fillStyle = '#ffff00';
+    gameCtx.arc(pacmanConfig.x, pacmanConfig.y, pacmanConfig.size, startAngle, endAngle, true);
+    gameCtx.lineTo(mouthAngle.x, mouthAngle.y);
+    gameCtx.fill();
   }
 
   return {
@@ -65,11 +188,24 @@ const drawFuncs = ((controlFuncs) => {
     },
 
     drawStartScreen (gameCtx) {
-      pacmanConfig.open = true;
-      this.drawPacMan(gameCtx);
+      drawPacMan();
+      // After initial Pacman drawing initiate the mouth movement config.
+      pacmanConfig.mouthMid = true;
       document.addEventListener('keydown', e => {
         e.preventDefault();
-        animate(controlFuncs.keyPressed(e));
+        const direction = controlFuncs.keyPressed(e);
+
+        if (controlFuncs.isArrowLeft(direction) || controlFuncs.isArrowUp(direction)
+          || controlFuncs.isArrowRight(direction) || controlFuncs.isArrowDown(direction)) {
+          pacmanConfig.direction = direction;
+        }
+        else {
+          return;
+        }
+        
+        if (gameStarted) return;
+        gameStarted = true;
+        animate();
       });
     },
 
@@ -113,22 +249,7 @@ const drawFuncs = ((controlFuncs) => {
       gameCtx.fillStyle = radgrad;
       gameCtx.fillRect(0, 0, 300, 300);
     },
-    drawPacMan (gameCtx) {
-      gameCtx.beginPath();
-      gameCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-      gameCtx.fillRect(0, 0, canvasConfig.width, canvasConfig.height);
 
-      // if (pacmanConfig.x > 300) {
-      //   pacmanConfig.x = 30;
-      // }
-
-      const startAngle = pacmanConfig.open ? (Math.PI/180) * 320 : 0;
-      const endAngle = pacmanConfig.open ? (Math.PI/180) * 50 : (Math.PI/180) * 360;
-      gameCtx.fillStyle = '#ffff00';
-      gameCtx.arc(pacmanConfig.x, pacmanConfig.y, pacmanConfig.size, startAngle, endAngle, true);
-      gameCtx.lineTo(pacmanConfig.x - (pacmanConfig.size / 2), pacmanConfig.y);
-      gameCtx.fill();
-    },
     drawText (gameCtx) {
       gameCtx.font = '48px sans-serif';
       gameCtx.fillStyle = '#33d';

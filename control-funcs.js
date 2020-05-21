@@ -9,20 +9,20 @@ const controlFuncs = (() => {
       return e.key;
     },
 
-    isArrowUp (arrow) {
-      return ARROW_UP === arrow;
-    },
-
-    isArrowDown (arrow) {
-      return ARROW_DOWN === arrow;
-    },
-
     isArrowLeft (arrow) {
       return ARROW_LEFT === arrow;
     },
 
+    isArrowUp (arrow) {
+      return ARROW_UP === arrow;
+    },
+
     isArrowRight (arrow) {
       return ARROW_RIGHT === arrow;
+    },
+
+    isArrowDown (arrow) {
+      return ARROW_DOWN === arrow;
     }
   }
 })();
