@@ -56,6 +56,11 @@ const drawFuncs = ((controlFuncs) => {
     mouthEnd: RIGHT_MOUTH_END
   };
 
+  // Walls and balls
+  const wallsAndBallsConfig = {
+
+  };
+
   // Ghost config
   const ghostConfig = {};
 
@@ -69,11 +74,21 @@ const drawFuncs = ((controlFuncs) => {
     // requestAnimationFrame(animate);
   }
 
+  function checkEdges () {
+    const tempX = pacmanConfig.x;
+    const tempY = pacmanConfig.y;
+    pacmanConfig.x = tempX > MOBILE_WIDTH_HEIGHT ? 0 : tempX < 0 ?
+      MOBILE_WIDTH_HEIGHT : tempX;
+    pacmanConfig.y = tempY > MOBILE_WIDTH_HEIGHT ? 0 : tempY < 0 ? 
+      MOBILE_WIDTH_HEIGHT : tempY;
+  }
+
   // Actions to take right before drawing Pacman. Best to set where Pacman's 
   // position will be and his expected mouth action.
   function preDrawPacmanActions () {
     const direction = pacmanConfig.direction;
     const mouthPosition = pacmanConfig.mouthPosition;
+    checkEdges();
 
     if (controlFuncs.isArrowLeft(direction)) {
       pacmanConfig.x -= MOVEMENT_DIFF;
