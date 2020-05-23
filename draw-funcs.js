@@ -2,6 +2,8 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
   let gameCanvas;
   let gameCtx;
   let gameStarted = false;
+  let animateProcess;
+  let gameOver = false;
 
   // Default constants
   const MOBILE_UNIT_SIZE = 1;
@@ -26,6 +28,9 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
   const MOUTH_MID_DIFF = 30;
   // This value is used to inc or dec Pacmans movement on the canvas.
   const MOVEMENT_DIFF = 5 
+
+  // Food constants
+  const FOOD_SIZE= 4;
 
   // Canvas config
   const canvasConfig = {
@@ -55,10 +60,14 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     mouthEnd: RIGHT_MOUTH_END
   };
 
-  // Walls and balls
-  const wallsAndBallsConfig = {
-
-  };
+  // Food list
+  const foodArr = [];
+  //   food1: { path: null, eaten: true },
+  //   food2: { path: null, eaten: true },
+  //   food3: { path: null, eaten: true },
+  //   food4: { path: null, eaten: true },
+  //   food5: { path: null, eaten: true },
+  // }
 
   // Ghost config
   const ghostConfig = {};
@@ -150,12 +159,51 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     gameCtx.fill();
   }
 
+  // Actions to take before drawing the food
+  function preDrawFoodActions () {
+
+  }
+
+  function drawFood () {
+    foodArr.forEach(food => {
+      gameCtx.beginPath();
+      gameCtx.fill(food);
+    });
+  }
+
+  // Actions to take after drawing the food
+  function postDrawFoodActions () {
+
+  }
+
   // Check for existence of food and status of timer
   function checkTimerAndFood () {
-    // TODO Properly implement timer and food check
-    if (dashboardFuncs.getTimer() <= 0) {
+    const leftovers = foodArr.length;
+
+    if (dashboardFuncs.getTimer() <= 0 && leftovers > 0) {
+      clearTimeout(animateProcess);
+      gameOver = true;
+      dashboardFuncs.stopTimerProcess();
+    } 
+    if (leftovers === 0) {
+      initFood();
       dashboardFuncs.resetDashboardTimer();
     }
+  }
+
+  function initFood () {
+    for (let i = 0; i < 5; i++) {
+      let x = getRandomCoord();
+      let y = getRandomCoord();
+      let path = new Path2D();
+      path.fillStyle = '#ffff00';
+      path.arc(x, y, FOOD_SIZE, 0, Math.PI * 2, true);
+      foodArr.push(path);
+    }
+  }
+
+  function getRandomCoord () {
+    return Math.floor(Math.random() * Math.floor(MOBILE_WIDTH_HEIGHT));
   }
 
   function colorStage () {
@@ -233,7 +281,9 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     drawPacMan();
     postDrawPacmanActions();
     checkTimerAndFood();
-    setTimeout(() => { requestAnimationFrame(animate); }, 40);
+    drawFood();
+    if (gameOver) return; // Break out of the animation.
+    animateProcess = setTimeout(() => { requestAnimationFrame(animate); }, 40);
   }
 
   return {

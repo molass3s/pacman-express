@@ -1,10 +1,11 @@
 const dashboardFuncs = (() => {
+  const DEFAULT_TIME = 15;
   const dashboardTimer = document.getElementById('timer');
-  let timer = 15;
+  let timer = DEFAULT_TIME;
   let timerProcess;
 
   function resetTimer () {
-    timer = 15;
+    timer = DEFAULT_TIME;
   }
 
   function decrementTimer () {
