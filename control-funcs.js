@@ -26,5 +26,3 @@ const controlFuncs = (() => {
     }
   }
 })();
-
-// export default controlFuncs;

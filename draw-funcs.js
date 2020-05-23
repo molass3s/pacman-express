@@ -1,4 +1,4 @@
-const drawFuncs = ((controlFuncs) => {
+const drawFuncs = ((controlFuncs, dashboardFuncs) => {
   let gameCanvas;
   let gameCtx;
   let gameStarted = false;
@@ -51,7 +51,6 @@ const drawFuncs = ((controlFuncs) => {
     // Default mouth is fully open.
     mouthPosition: 0, 
     direction: 'ArrowRight', // Default to key arrow right.
-    speed: 60, // TODO Gradual speed increase. Default to 60 ms per frame.
     mouthStart: RIGHT_MOUTH_START, // Default with mouth open, facing right.
     mouthEnd: RIGHT_MOUTH_END
   };
@@ -63,25 +62,6 @@ const drawFuncs = ((controlFuncs) => {
 
   // Ghost config
   const ghostConfig = {};
-
-  function animate () {
-    // let currentSpeed = pacmanConfig.speed;
-    // pacmanConfig.speed = currentSpeed < -60 ? 60 : currentSpeed - 10;
-    preDrawPacmanActions();
-    drawPacMan();
-    postDrawPacmanActions();
-    setTimeout(() => { requestAnimationFrame(animate); }, 40);
-    // requestAnimationFrame(animate);
-  }
-
-  function checkEdges () {
-    const tempX = pacmanConfig.x;
-    const tempY = pacmanConfig.y;
-    pacmanConfig.x = tempX > MOBILE_WIDTH_HEIGHT ? 0 : tempX < 0 ?
-      MOBILE_WIDTH_HEIGHT : tempX;
-    pacmanConfig.y = tempY > MOBILE_WIDTH_HEIGHT ? 0 : tempY < 0 ? 
-      MOBILE_WIDTH_HEIGHT : tempY;
-  }
 
   // Actions to take right before drawing Pacman. Best to set where Pacman's 
   // position will be and his expected mouth action.
@@ -164,68 +144,104 @@ const drawFuncs = ((controlFuncs) => {
     const endAngle = (Math.PI/180) * pacmanConfig.mouthEnd;
     const mouthAngle = pacmanConfig.mouthAnglePosition;
     gameCtx.beginPath();
-    gameCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-    gameCtx.fillRect(0, 0, canvasConfig.width, canvasConfig.height);
     gameCtx.fillStyle = '#ffff00';
     gameCtx.arc(pacmanConfig.x, pacmanConfig.y, pacmanConfig.size, startAngle, endAngle, true);
     gameCtx.lineTo(mouthAngle.x, mouthAngle.y);
     gameCtx.fill();
   }
 
+  // Check for existence of food and status of timer
+  function checkTimerAndFood () {
+    // TODO Properly implement timer and food check
+    if (dashboardFuncs.getTimer() <= 0) {
+      dashboardFuncs.resetDashboardTimer();
+    }
+  }
+
+  function colorStage () {
+    gameCtx.fillStyle = '#000';
+    gameCtx.fillRect(0, 0, canvasConfig.width, canvasConfig.height);
+  }
+
+  function checkEdges () {
+    const tempX = pacmanConfig.x;
+    const tempY = pacmanConfig.y;
+    // Use mobile width and height here, because regardless if the canvas size 
+    // itself is non-mobile, the content in it ends up being scaled up 2x on
+    // non-mobile screens.
+    pacmanConfig.x = tempX > MOBILE_WIDTH_HEIGHT ? 0 : tempX < 0 ?
+      MOBILE_WIDTH_HEIGHT : tempX;
+    pacmanConfig.y = tempY > MOBILE_WIDTH_HEIGHT ? 0 : tempY < 0 ? 
+      MOBILE_WIDTH_HEIGHT : tempY;
+  }
+
+  function updateCanvasConfig () {
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    
+    if (height > REG_WIDTH_HEIGHT && width > REG_WIDTH_HEIGHT) {
+      canvasConfig.width = REG_WIDTH_HEIGHT;
+      canvasConfig.height = REG_WIDTH_HEIGHT;
+      canvasConfig.unitSize = REG_UNIT_SIZE;
+    } else {
+      canvasConfig.width = MOBILE_WIDTH_HEIGHT;
+      canvasConfig.height = MOBILE_WIDTH_HEIGHT;
+      canvasConfig.unitSize = MOBILE_UNIT_SIZE;
+    }
+
+    // Update canvas based on screen size
+    gameCanvas.width = canvasConfig.width;
+    gameCanvas.height = canvasConfig.height;
+
+    // Set the scale based on screen size
+    gameCtx.scale(canvasConfig.unitSize, canvasConfig.unitSize);
+    drawStartScreen();
+  }
+
+  function drawStartScreen () {
+    dashboardFuncs.setDashboardTimer();
+    colorStage();
+    drawPacMan();
+    // After initial Pacman drawing initiate the mouth movement config.
+    pacmanConfig.mouthMid = true;
+    document.addEventListener('keydown', e => {
+      const direction = controlFuncs.keyPressed(e);
+
+      if (controlFuncs.isArrowLeft(direction) || controlFuncs.isArrowUp(direction)
+        || controlFuncs.isArrowRight(direction) || controlFuncs.isArrowDown(direction)) {
+        pacmanConfig.direction = direction;
+        e.preventDefault();
+      }
+      else {
+        return;
+      }
+      
+      if (gameStarted) return;
+      gameStarted = true;
+      dashboardFuncs.startTimerProcess();
+      animate();
+    });
+  }
+
+  const drawEndScreen = () => {
+    // Draw the end screen here.
+  }
+
+  function animate () {
+    colorStage();
+    preDrawPacmanActions();
+    drawPacMan();
+    postDrawPacmanActions();
+    checkTimerAndFood();
+    setTimeout(() => { requestAnimationFrame(animate); }, 40);
+  }
+
   return {
     initConfig (ctx, canvas) {
       gameCanvas = canvas;
       gameCtx = ctx;
-      window.addEventListener('resize', () => this.updateCanvasConfig());
-      this.updateCanvasConfig();
-    },
-
-    updateCanvasConfig () {
-      let width = window.innerWidth;
-      let height = window.innerHeight;
-      
-      if (height > REG_WIDTH_HEIGHT && width > REG_WIDTH_HEIGHT) {
-        canvasConfig.width = REG_WIDTH_HEIGHT;
-        canvasConfig.height = REG_WIDTH_HEIGHT;
-        canvasConfig.unitSize = REG_UNIT_SIZE;
-      } else {
-        canvasConfig.width = MOBILE_WIDTH_HEIGHT;
-        canvasConfig.height = MOBILE_WIDTH_HEIGHT;
-        canvasConfig.unitSize = MOBILE_UNIT_SIZE;
-      }
-
-      // Update canvas based on screen size
-      gameCanvas.width = canvasConfig.width;
-      gameCanvas.height = canvasConfig.height;
-
-      gameCtx.scale(canvasConfig.unitSize, canvasConfig.unitSize);
-      this.drawStartScreen(gameCtx);
-    },
-
-    drawStartScreen (gameCtx) {
-      drawPacMan();
-      // After initial Pacman drawing initiate the mouth movement config.
-      pacmanConfig.mouthMid = true;
-      document.addEventListener('keydown', e => {
-        e.preventDefault();
-        const direction = controlFuncs.keyPressed(e);
-
-        if (controlFuncs.isArrowLeft(direction) || controlFuncs.isArrowUp(direction)
-          || controlFuncs.isArrowRight(direction) || controlFuncs.isArrowDown(direction)) {
-          pacmanConfig.direction = direction;
-        }
-        else {
-          return;
-        }
-        
-        if (gameStarted) return;
-        gameStarted = true;
-        animate();
-      });
-    },
-
-    drawEndScreen: (gameCtx) => {
-      // Draw the end screen here.
+      window.addEventListener('resize', () => updateCanvasConfig());
+      updateCanvasConfig();
     },
 
     // Draws the Snake Game stage
@@ -271,6 +287,4 @@ const drawFuncs = ((controlFuncs) => {
       gameCtx.strokeText('Snake', 150, 150);
     }
   };
-})(controlFuncs);
-
-// export default drawFuncs;
+})(controlFuncs, dashboardFuncs);

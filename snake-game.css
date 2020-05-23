@@ -6,48 +6,36 @@
 /* set the root em */
 html {
   font-size: 16px;
-  background-color: #f7f7f7;
 }
 
 #content {
   display: flex;
   justify-content: center;
   text-align: center;
-  background-color: #f7f7f7;
 }
 
-/* #content > div {
-  max-width: 320px;
-} */
-
-/* #game-canvas {
-  background-color: #000;
-} */
-
-#score-and-level {
-  margin: .75rem;
-  display: flex;
-  justify-content: space-between;
-  flex-direction: row;
+#dashboard {
+  color: #f7f7f7;
+  background-color: rgba(0,0,0,0.8);
+  font-weight: bold;
 }
 
-#controls-content {
-  display: flex;
-  justify-content: space-between;
+#dashboard-title {
+  text-align: center;
+  margin-bottom: 10px;
 }
 
-#level {
-  margin-right: 1rem;
+#dashboard-stats {
+  text-align: left;
 }
 
-#play {
-  display: flex;
-  align-items: center;
+#dashboard-timer {
+  display: inline-block;
+  min-width: 80px;
+  margin-left: 5px;
 }
 
-#play > div {
-  border-top: .8rem solid transparent;
-  border-bottom: .8rem solid transparent;
-  border-left: 1.5rem solid rgb(86, 86, 208);
-  background-color: transparent;
+#dashboard-score {
+  display: inline-block;
+  margin-left: 20px;
 }

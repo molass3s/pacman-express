@@ -6,36 +6,32 @@
     user-scalable=no, maximum-scale=1" />
   <title>Snake Game</title>
   <link rel="stylesheet" href="snake-game.css" />
-  <script src="./control-funcs.js"></script>
-  <script src="./draw-funcs.js"></script>
-  <script src="./snake-game.js" defer></script>
+  <script src="dashboard-funcs.js" defer></script>
+  <script src="control-funcs.js" defer></script>
+  <script src="draw-funcs.js" defer></script>
+  <script src="snake-game.js" defer></script>
 </head>
 <body>
   <div id="content">
     <div>
-      <!-- <h1>Snake Game</h1> -->
+      <div id="dashboard">
+        <div id="dashboard-title">
+          Pacman Express
+        </div>
+        <div id="dashboard-stats">
+          <div id="dashboard-timer">
+            <label>TIME:</label>
+            <span id="timer">15</span>
+          </div>
+          <div id="dashboard-score">
+            <label>SCORE: </label>
+            <span id="score">0</span>
+          </div>
+        </div> 
+      </div>
       <canvas id="game-canvas">
         <div>You have a seriously outdated browser...</div>
       </canvas>
-      
-      <!-- <div id="score-and-level">
-        <div id="score-content">
-          <label for="score">Score: </label>
-          <span id="score">0</span>
-        </div>
-  
-        <div id="controls-content">
-          <select id="level">
-            <option value="0" selected>Weak</option>
-            <option value="1">Normal</option>
-            <option value="2">Insane</option>
-          </select>
-  
-          <div id="play">
-            <div></div>
-          </div>
-        </div>
-      </div> -->
     </div>
   </div>
 </body>
