@@ -1,8 +1,10 @@
 const dashboardFuncs = (() => {
   const DEFAULT_TIME = 15;
   const dashboardTimer = document.getElementById('timer');
+  const dashboardScore = document.getElementById('score');
   let timer = DEFAULT_TIME;
   let timerProcess;
+  let score = 0; // Start with 0 points
 
   function resetTimer () {
     timer = DEFAULT_TIME;
@@ -36,6 +38,16 @@ const dashboardFuncs = (() => {
     resetDashboardTimer () {
       resetTimer();
       this.setDashboardTimer();
+    },
+
+    incrementDashboardScore () {
+      score++;
+      dashboardScore.innerText = score;
+    },
+
+    resetDashboardScore () {
+      score = 0;
+      dashboardScore.innerText = score;
     }
   }
 })();

@@ -1,10 +1,4 @@
 const drawFuncs = ((controlFuncs, dashboardFuncs) => {
-  let gameCanvas;
-  let gameCtx;
-  let gameStarted = false;
-  let animateProcess;
-  let gameOver = false;
-
   // Default constants
   const MOBILE_UNIT_SIZE = 1;
   const MOBILE_WIDTH_HEIGHT = 300;
@@ -14,14 +8,14 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
   // Pacman constants
   // With the exception of the mouth closed constants, these all depend on arc
   // being drawn counter-clockwise.
-  const LEFT_MOUTH_START = 130;
-  const LEFT_MOUTH_END = 230;
-  const UP_MOUTH_START = 220;
-  const UP_MOUTH_END = 320;
-  const RIGHT_MOUTH_START = 310;
-  const RIGHT_MOUTH_END = 50;
-  const DOWN_MOUTH_START = 40;
-  const DOWN_MOUTH_END = 140;
+  const LEFT_MOUTH_START = 110;
+  const LEFT_MOUTH_END = 250;
+  const UP_MOUTH_START = 200;
+  const UP_MOUTH_END = 340;
+  const RIGHT_MOUTH_START = 290;
+  const RIGHT_MOUTH_END = 70;
+  const DOWN_MOUTH_START = 20;
+  const DOWN_MOUTH_END = 160;
   const MOUTH_CLOSED_START = 0;
   const MOUTH_CLOSED_END = 360;
   // This value is used to inc or dec mouth angles to create a better animation.
@@ -30,7 +24,15 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
   const MOVEMENT_DIFF = 5 
 
   // Food constants
-  const FOOD_SIZE= 4;
+  const FOOD_SIZE= 4; // Size of food, in radius.
+  const FOOD_EATEN = 8; // If Pacman is within 8px of the food, it's eaten.
+  const FOOD_GAP = 10; // The space, in px, that food should be spaced apart.
+
+  let gameCanvas;
+  let gameCtx;
+  let gameStarted = false;
+  let animateProcess;
+  let gameOver = false;
 
   // Canvas config
   const canvasConfig = {
@@ -45,7 +47,7 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     // Set canvas config to non-mobile
     x: REG_WIDTH_HEIGHT / 10, 
     y: REG_WIDTH_HEIGHT / 10, 
-    size: 10, 
+    size: 10, // Default size of Pacman, in radius.
     mouthAnglePosition: {
       // The default mouth angle position is facing right at the spawn position.
       x: (REG_WIDTH_HEIGHT / 10) - 5,
@@ -61,13 +63,7 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
   };
 
   // Food list
-  const foodArr = [];
-  //   food1: { path: null, eaten: true },
-  //   food2: { path: null, eaten: true },
-  //   food3: { path: null, eaten: true },
-  //   food4: { path: null, eaten: true },
-  //   food5: { path: null, eaten: true },
-  // }
+  let foodArr = [];
 
   // Ghost config
   const ghostConfig = {};
@@ -161,13 +157,24 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
 
   // Actions to take before drawing the food
   function preDrawFoodActions () {
+    const pacmanX = pacmanConfig.x;
+    const pacmanY = pacmanConfig.y;
+    const lastFoodCount = foodArr.length;
+    foodArr = foodArr.filter(food => {
+      // return (((food.x - FOOD_EATEN) > pacmanX) || ((food.x + FOOD_EATEN) < pacmanX)) 
+      //   || (((food.y - FOOD_EATEN) > pacmanY) || ((food.y + FOOD_EATEN) < pacmanY))
+      return checkProximity(food, { x: pacmanX, y: pacmanY}, FOOD_EATEN, false);
+    });
 
+    if (foodArr.length < lastFoodCount) {
+      dashboardFuncs.incrementDashboardScore();
+    }
   }
 
   function drawFood () {
     foodArr.forEach(food => {
       gameCtx.beginPath();
-      gameCtx.fill(food);
+      gameCtx.fill(food.path);
     });
   }
 
@@ -192,18 +199,53 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
   }
 
   function initFood () {
+    let usedCoordsArr = []
     for (let i = 0; i < 5; i++) {
       let x = getRandomCoord();
       let y = getRandomCoord();
+      
+      // Prevent food from being within such close proximity of each other,
+      // specifically FOOD_GAP px.
+      let nearbyFood = usedCoordsArr.find(coord => {
+        return checkProximity(coord, { x, y }, FOOD_GAP, true);
+      });
+      if (nearbyFood) {
+        x = nearbyFood.x <= (FOOD_GAP + 5) ? x + FOOD_GAP : x - FOOD_GAP;
+        y = nearbyFood.y <= (FOOD_GAP + 5) ? y + FOOD_GAP : y - FOOD_GAP;
+      }
+
+      usedCoordsArr.push({ x, y });
       let path = new Path2D();
       path.fillStyle = '#ffff00';
       path.arc(x, y, FOOD_SIZE, 0, Math.PI * 2, true);
-      foodArr.push(path);
+      foodArr.push({ x, y, path });
     }
   }
 
   function getRandomCoord () {
-    return Math.floor(Math.random() * Math.floor(MOBILE_WIDTH_HEIGHT));
+    // Generates a random number from a range of 10 to MOBILE_WIDTH_HEIGHT, all
+    // inclusive.
+    // These ranges prevent food from spawning too close to the map edges.
+    return 10 + Math.floor(Math.random() * (MOBILE_WIDTH_HEIGHT - 20));
+  }
+
+  // Check the surrounding. Source is the center, target is the potential 
+  // surrounding object, activation is the distance on which something happens,
+  // and positive is if we want to find something within activation distance (
+  // a false value means we want to make sure nothing is within activation
+  // distance).
+  function checkProximity (source, target, activation, positive) {
+    if (positive) {
+      return (((source.x - activation) < target.x) && ((source.x + activation) 
+        > target.x)) 
+        && (((source.y - activation) < target.y) || ((source.y + activation) 
+        > target.y));
+    } else {
+      return (((source.x - activation) > target.x) || ((source.x + activation) 
+        < target.x)) 
+        || (((source.y - activation) > target.y) || ((source.y + activation) 
+        < target.y));
+    }
   }
 
   function colorStage () {
@@ -281,6 +323,7 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     drawPacMan();
     postDrawPacmanActions();
     checkTimerAndFood();
+    preDrawFoodActions();
     drawFood();
     if (gameOver) return; // Break out of the animation.
     animateProcess = setTimeout(() => { requestAnimationFrame(animate); }, 40);
