@@ -294,7 +294,7 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     drawPacMan();
     // After initial Pacman drawing initiate the mouth movement config.
     pacmanConfig.mouthMid = true;
-    document.addEventListener('keydown', e => {
+    controlFuncs.initKeyControls(e => {
       const direction = controlFuncs.keyPressed(e);
 
       if (controlFuncs.isArrowLeft(direction) || controlFuncs.isArrowUp(direction)
@@ -305,12 +305,19 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
       else {
         return;
       }
+      !gameStarted && startGame();
       
-      if (gameStarted) return;
-      gameStarted = true;
-      dashboardFuncs.startTimerProcess();
-      animate();
     });
+    controlFuncs.initSwipeControls(swipeDirection => {
+      pacmanConfig.direction = swipeDirection;
+      !gameStarted && startGame();
+    });
+  }
+
+  const startGame = () => {
+    gameStarted = true;
+    dashboardFuncs.startTimerProcess();
+    animate();
   }
 
   const drawEndScreen = () => {
