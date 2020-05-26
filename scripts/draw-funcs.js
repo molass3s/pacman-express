@@ -150,7 +150,8 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     const mouthAngle = pacmanConfig.mouthAnglePosition;
     gameCtx.beginPath();
     gameCtx.fillStyle = '#ffff00';
-    gameCtx.arc(pacmanConfig.x, pacmanConfig.y, pacmanConfig.size, startAngle, endAngle, true);
+    gameCtx.arc(pacmanConfig.x, pacmanConfig.y, pacmanConfig.size, startAngle, 
+      endAngle, true);
     gameCtx.lineTo(mouthAngle.x, mouthAngle.y);
     gameCtx.fill();
   }
@@ -161,8 +162,6 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     const pacmanY = pacmanConfig.y;
     const lastFoodCount = foodArr.length;
     foodArr = foodArr.filter(food => {
-      // return (((food.x - FOOD_EATEN) > pacmanX) || ((food.x + FOOD_EATEN) < pacmanX)) 
-      //   || (((food.y - FOOD_EATEN) > pacmanY) || ((food.y + FOOD_EATEN) < pacmanY))
       return checkProximity(food, { x: pacmanX, y: pacmanY}, FOOD_EATEN, false);
     });
 

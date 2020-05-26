@@ -12,6 +12,7 @@
 /* set the root em */
 html {
   font-size: 16px;
+  background-color: rgba(0,0,0,0.8);
 }
 
 #content {
@@ -22,7 +23,6 @@ html {
 
 #dashboard {
   color: #f7f7f7;
-  background-color: rgba(0,0,0,0.8);
   font-weight: 900;
 }
 
