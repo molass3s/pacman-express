@@ -1,5 +1,5 @@
 const dashboardFuncs = (() => {
-  const DEFAULT_TIME = 15;
+  const DEFAULT_TIME = 10; // TODO change to 15 after adding walls
   const dashboardTimer = document.getElementById('timer');
   const dashboardScore = document.getElementById('score');
   let timer = DEFAULT_TIME;

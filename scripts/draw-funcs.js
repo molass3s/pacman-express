@@ -1,8 +1,5 @@
 const drawFuncs = ((controlFuncs, dashboardFuncs) => {
-  // Default constants
-  const MOBILE_UNIT_SIZE = 1;
-  const MOBILE_WIDTH_HEIGHT = 300;
-  const REG_UNIT_SIZE = 2;
+  // Canvas size for screens that are larger than 600x600
   const REG_WIDTH_HEIGHT = 600;
 
   // Pacman constants
@@ -21,52 +18,77 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
   // This value is used to inc or dec mouth angles to create a better animation.
   const MOUTH_MID_DIFF = 30;
   // This value is used to inc or dec Pacmans movement on the canvas.
-  const MOVEMENT_DIFF = 5 
+  const MOVEMENT_DIFF = 10 
 
   // Food constants
-  const FOOD_SIZE= 4; // Size of food, in radius.
-  const FOOD_EATEN = 8; // If Pacman is within 8px of the food, it's eaten.
-  const FOOD_GAP = 10; // The space, in px, that food should be spaced apart.
+  const FOOD_SIZE= 8; // Size of food, in radius.
+  const FOOD_EATEN = 16; // If Pacman is within 8px of the food, it's eaten.
+  const FOOD_GAP = 20; // The space, in px, that food should be spaced apart.
 
   let gameCanvas;
   let gameCtx;
   let gameStarted = false;
   let animateProcess;
-  let gameOver = false;
 
   // Canvas config
   const canvasConfig = {
     // Set canvas config to non-mobile
     width: REG_WIDTH_HEIGHT, 
-    height: REG_WIDTH_HEIGHT, 
-    unitSize: REG_UNIT_SIZE 
+    height: REG_WIDTH_HEIGHT
   };
 
   // Pacman config
   const pacmanConfig = {
-    // Set canvas config to non-mobile
-    x: REG_WIDTH_HEIGHT / 10, 
-    y: REG_WIDTH_HEIGHT / 10, 
-    size: 10, // Default size of Pacman, in radius.
-    mouthAnglePosition: {
-      // The default mouth angle position is facing right at the spawn position.
-      x: (REG_WIDTH_HEIGHT / 10) - 5,
-      y: REG_WIDTH_HEIGHT / 10
-    },
-    mouthOpening: false, // Default to false, since mouth is open at start.
-    // There are 3 mouth positions. 0 = fully open, 1 = halfway, and 2 = closed.
-    // Default mouth is fully open.
-    mouthPosition: 0, 
-    direction: 'ArrowRight', // Default to key arrow right.
-    mouthStart: RIGHT_MOUTH_START, // Default with mouth open, facing right.
-    mouthEnd: RIGHT_MOUTH_END
+    x: null, 
+    y: null, 
+    size: 20, // Default size of Pacman, in radius.
+    mouthAnglePosition: null,
+    mouthOpening: null, 
+    mouthPosition: null, 
+    direction: null, 
+    mouthStart: null, 
+    mouthEnd: null
   };
 
-  // Food list
-  let foodArr = [];
+  // Food array
+  let foodArr;
 
-  // Ghost config
-  const ghostConfig = {};
+  // Message containers
+  let outerContainerPath;
+  let innerContainerPath;
+
+  const keyControlsHandler = e => {
+    const direction = controlFuncs.keyPressed(e);
+    
+    if (controlFuncs.isArrowLeft(direction) || controlFuncs.isArrowUp(direction)
+      || controlFuncs.isArrowRight(direction) || controlFuncs.isArrowDown(direction)) {
+      pacmanConfig.direction = direction;
+      e.preventDefault();
+    }
+    else {
+      return;
+    }
+    !gameStarted && startGame();
+  }
+
+  const swipeControlsHandler = swipeDirection => {
+    pacmanConfig.direction = swipeDirection;
+    !gameStarted && startGame();
+  }
+
+  const keyControlsRestartHandler = e => {
+    resetDashboard();
+  }
+
+  const swipeConstrolsRestartHandler = swipeDirection => {
+    resetDashboard();
+  }
+
+  const resetDashboard = () => {
+    dashboardFuncs.resetDashboardTimer();
+    dashboardFuncs.resetDashboardScore();
+    drawStartScreen();
+  };
 
   // Actions to take right before drawing Pacman. Best to set where Pacman's 
   // position will be and his expected mouth action.
@@ -131,6 +153,23 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     }
   }
 
+  const initPacmanConfig = () => {
+    pacmanConfig.x = 50;
+    pacmanConfig.y = 50;
+    // The default mouth angle position is facing right at the spawn position.
+    pacmanConfig.mouthAnglePosition = { x: 40, y: 50 };
+    // Default to false, since mouth is open at start.
+    pacmanConfig.mouthOpening = false;
+    // There are 3 mouth positions. 0 = fully open, 1 = halfway, and 2 = closed.
+    // Default mouth is fully open.
+    pacmanConfig.mouthPosition = 0;
+    // Default to key arrow right.
+    pacmanConfig.direction = 'ArrowRight';
+    // Default with mouth open, facing right.
+    pacmanConfig.mouthStart = RIGHT_MOUTH_START;
+    pacmanConfig.mouthEnd = RIGHT_MOUTH_END;
+  };
+
   // Actions to take after drawing Pacman
   function postDrawPacmanActions () {
     const mouthPos = pacmanConfig.mouthPosition;
@@ -177,19 +216,15 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     });
   }
 
-  // Actions to take after drawing the food
-  function postDrawFoodActions () {
-
-  }
-
   // Check for existence of food and status of timer
   function checkTimerAndFood () {
     const leftovers = foodArr.length;
 
     if (dashboardFuncs.getTimer() <= 0 && leftovers > 0) {
       clearTimeout(animateProcess);
-      gameOver = true;
+      gameStarted = false; // The game has ended.
       dashboardFuncs.stopTimerProcess();
+      drawEndScreen();
     } 
     if (leftovers === 0) {
       initFood();
@@ -200,8 +235,8 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
   function initFood () {
     let usedCoordsArr = []
     for (let i = 0; i < 5; i++) {
-      let x = getRandomCoord();
-      let y = getRandomCoord();
+      let x = getRandomCoord(canvasConfig.width);
+      let y = getRandomCoord(canvasConfig.height);
       
       // Prevent food from being within such close proximity of each other,
       // specifically FOOD_GAP px.
@@ -221,11 +256,11 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     }
   }
 
-  function getRandomCoord () {
-    // Generates a random number from a range of 10 to MOBILE_WIDTH_HEIGHT, all
+  function getRandomCoord (max) {
+    // Generates a random number from a range of 20 to max, all
     // inclusive.
     // These ranges prevent food from spawning too close to the map edges.
-    return 10 + Math.floor(Math.random() * (MOBILE_WIDTH_HEIGHT - 20));
+    return 20 + Math.floor(Math.random() * (max - 40));
   }
 
   // Check the surrounding. Source is the center, target is the potential 
@@ -252,16 +287,38 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     gameCtx.fillRect(0, 0, canvasConfig.width, canvasConfig.height);
   }
 
+  const initDialogContainers = () => {
+    const width = canvasConfig.width - 50;
+    // Set the outer container
+    outerContainerPath = new Path2D();
+    // Start from 25x50, with a dynamic width, and height of 100px.
+    outerContainerPath.rect(25, 100, width, 100);
+  };
+
+  const displayDialog = msg => {
+    gameCtx.save();
+    gameCtx.fillStyle = '#f7f7f7';
+    gameCtx.fill(outerContainerPath);
+    gameCtx.font = '1.5rem vcr-osd-mono';
+    gameCtx.shadowOffsetX = 2;
+    gameCtx.shadowOffsetY = 2;
+    gameCtx.shadowBlur = 2;
+    gameCtx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    gameCtx.fillStyle = '#000';
+    gameCtx.fillText(msg, 35, 150, canvasConfig.width - 80);
+    gameCtx.restore();
+  };
+
   function checkEdges () {
-    const tempX = pacmanConfig.x;
-    const tempY = pacmanConfig.y;
+    const pacmanX = pacmanConfig.x;
+    const pacmanY = pacmanConfig.y;
     // Use mobile width and height here, because regardless if the canvas size 
     // itself is non-mobile, the content in it ends up being scaled up 2x on
     // non-mobile screens.
-    pacmanConfig.x = tempX > MOBILE_WIDTH_HEIGHT ? 0 : tempX < 0 ?
-      MOBILE_WIDTH_HEIGHT : tempX;
-    pacmanConfig.y = tempY > MOBILE_WIDTH_HEIGHT ? 0 : tempY < 0 ? 
-      MOBILE_WIDTH_HEIGHT : tempY;
+    pacmanConfig.x = pacmanX > canvasConfig.width ? 0 : pacmanX < 0 ?
+      canvasConfig.width : pacmanX;
+    pacmanConfig.y = pacmanY > canvasConfig.height ? 0 : pacmanY < 0 ? 
+      canvasConfig.height : pacmanY;
   }
 
   function updateCanvasConfig () {
@@ -271,46 +328,33 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     if (height > REG_WIDTH_HEIGHT && width > REG_WIDTH_HEIGHT) {
       canvasConfig.width = REG_WIDTH_HEIGHT;
       canvasConfig.height = REG_WIDTH_HEIGHT;
-      canvasConfig.unitSize = REG_UNIT_SIZE;
     } else {
-      canvasConfig.width = MOBILE_WIDTH_HEIGHT;
-      canvasConfig.height = MOBILE_WIDTH_HEIGHT;
-      canvasConfig.unitSize = MOBILE_UNIT_SIZE;
+      canvasConfig.width = width;
+      canvasConfig.height = height - document.getElementById('dashboard')
+        .offsetHeight;
     }
 
     // Update canvas based on screen size
     gameCanvas.width = canvasConfig.width;
     gameCanvas.height = canvasConfig.height;
 
-    // Set the scale based on screen size
-    gameCtx.scale(canvasConfig.unitSize, canvasConfig.unitSize);
+    initDialogContainers();
     drawStartScreen();
   }
 
   function drawStartScreen () {
     dashboardFuncs.setDashboardTimer();
     colorStage();
+    initPacmanConfig();
+    foodArr = [];
     drawPacMan();
+    displayDialog('Press a directional key or swipe to start');
     // After initial Pacman drawing initiate the mouth movement config.
     pacmanConfig.mouthMid = true;
-    controlFuncs.initKeyControls(e => {
-      const direction = controlFuncs.keyPressed(e);
-
-      if (controlFuncs.isArrowLeft(direction) || controlFuncs.isArrowUp(direction)
-        || controlFuncs.isArrowRight(direction) || controlFuncs.isArrowDown(direction)) {
-        pacmanConfig.direction = direction;
-        e.preventDefault();
-      }
-      else {
-        return;
-      }
-      !gameStarted && startGame();
-      
-    });
-    controlFuncs.initSwipeControls(swipeDirection => {
-      pacmanConfig.direction = swipeDirection;
-      !gameStarted && startGame();
-    });
+    controlFuncs.removeKeyControls(keyControlsRestartHandler);
+    controlFuncs.removeSwipeControls(swipeConstrolsRestartHandler);
+    controlFuncs.initKeyControls(keyControlsHandler);
+    controlFuncs.initSwipeControls(swipeControlsHandler);
   }
 
   const startGame = () => {
@@ -320,7 +364,14 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
   }
 
   const drawEndScreen = () => {
-    // Draw the end screen here.
+    // Draw the end screen instructions.
+    displayDialog('Game over...\nPress a directional key or swipe to restart');
+    // Reset Pacman back to start position.
+    initPacmanConfig();
+    controlFuncs.removeKeyControls(keyControlsHandler);
+    controlFuncs.removeSwipeControls(swipeControlsHandler);
+    controlFuncs.initKeyControls(keyControlsRestartHandler);
+    controlFuncs.initSwipeControls(swipeConstrolsRestartHandler);
   }
 
   function animate () {
@@ -329,9 +380,9 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     drawPacMan();
     postDrawPacmanActions();
     checkTimerAndFood();
+    if (!gameStarted) return; // Break out of the animation if game has ended.
     preDrawFoodActions();
     drawFood();
-    if (gameOver) return; // Break out of the animation.
     animateProcess = setTimeout(() => { requestAnimationFrame(animate); }, 40);
   }
 
