@@ -2,6 +2,7 @@ const drawFuncs = ((controlFuncs, dashboardFuncs, wallFuncs) => {
   // Canvas size for screens that are larger than 600x600
   const REG_WIDTH_HEIGHT = 600;
 
+  // TODO Move Pacman related stuff to separate file, like other files.s
   // Pacman constants
   // With the exception of the mouth closed constants, these all depend on arc
   // being drawn counter-clockwise.
@@ -23,7 +24,7 @@ const drawFuncs = ((controlFuncs, dashboardFuncs, wallFuncs) => {
   // Food constants
   FOOD_COUNT = 5;
   const FOOD_SIZE= 8; // Size of food, in radius.
-  const FOOD_EATEN = 16; // If Pacman is within 8px of the food, it's eaten.
+  const FOOD_EATEN = 18; // If Pacman is within 8px of the food, it's eaten.
   const FOOD_GAP = 30; // The space, in px, that food should be spaced apart.
 
   let gameCanvas;
@@ -163,10 +164,10 @@ const drawFuncs = ((controlFuncs, dashboardFuncs, wallFuncs) => {
   }
 
   const initPacmanConfig = () => {
-    pacmanConfig.x = 50;
+    pacmanConfig.x = 150;
     pacmanConfig.y = 50;
     // The default mouth angle position is facing right at the spawn position.
-    pacmanConfig.mouthAnglePosition = { x: 40, y: 50 };
+    pacmanConfig.mouthAnglePosition = { x: 140, y: 50 };
     // Default to false, since mouth is open at start.
     pacmanConfig.mouthOpening = false;
     // There are 3 mouth positions. 0 = fully open, 1 = halfway, and 2 = closed.
@@ -211,7 +212,8 @@ const drawFuncs = ((controlFuncs, dashboardFuncs, wallFuncs) => {
     const lastFoodCount = foodArr.length;
     // We only care about the food that's not eaten.
     foodArr = foodArr.filter(food => {
-      return findUneatenFood(food, { x: pacmanX, y: pacmanY}, FOOD_EATEN, false);
+      return findUneatenFood(food, { x: pacmanX, y: pacmanY}, FOOD_EATEN, 
+        false);
     });
 
     if (foodArr.length < lastFoodCount) {
@@ -226,23 +228,21 @@ const drawFuncs = ((controlFuncs, dashboardFuncs, wallFuncs) => {
     });
   }
 
-  const preDrawWallsActions = () => {
-    // TODO check if Pacman ran into a wall.
-  };
-
   const drawWalls = () => {
     gameCtx.save()
     selectedWallConfig.forEach(wall => {
       gameCtx.lineCap = 'round';
       gameCtx.lineJoin = 'round';
+      // drawSensor(wall.sensor);
       gameCtx.fillStyle = '#1919A6'
       gameCtx.fill(wall.path);
     });
     gameCtx.restore();
   };
 
+  // I left this here for testing...
   const drawSensor = (sensor) => {
-    gameCtx.fillStyle = 'rgba(0, 0, 0, 0)';
+    gameCtx.fillStyle = 'rgba(200, 0, 0, 1)';
     gameCtx.fill(sensor);
   }
 
@@ -251,10 +251,7 @@ const drawFuncs = ((controlFuncs, dashboardFuncs, wallFuncs) => {
     const leftovers = foodArr.length;
 
     if (dashboardFuncs.getTimer() <= 0 && leftovers > 0) {
-      clearTimeout(animateProcess);
-      gameStarted = false; // The game has ended.
-      dashboardFuncs.stopTimerProcess();
-      drawEndScreen();
+      endGame();
     } 
     if (leftovers === 0) {
       // Set
@@ -264,9 +261,24 @@ const drawFuncs = ((controlFuncs, dashboardFuncs, wallFuncs) => {
     }
   }
 
+  const checkWallCollision = () => {
+    const wallCollided = selectedWallConfig.some(wall => {
+      return gameCtx.isPointInPath(wall.sensor, pacmanConfig.x, pacmanConfig.y);
+    });
+
+    wallCollided && endGame();
+  };
+
+  const endGame = () => {
+    clearTimeout(animateProcess);
+    gameStarted = false; // The game has ended.
+    dashboardFuncs.stopTimerProcess();
+    drawFood();
+    drawWalls();
+    drawEndScreen();
+  };
+
   function initFood () {
-    const canvasWidth = canvasConfig.width;
-    const canvasHeight = canvasConfig.height;
     let usedCoordsArr = []
     
     for (let i = 0; i < FOOD_COUNT; i++) {
@@ -291,8 +303,10 @@ const drawFuncs = ((controlFuncs, dashboardFuncs, wallFuncs) => {
         if (affectedWall || nearbyFood) {
           // If there's nearby food or new food is colliding with a wall, move 
           // new food +/- gapIncrement pixels over.
-          x = (x <= gapIncrement) || (x < canvasConfig.width - (gapIncrement * 3)) ? x + gapIncrement : x - gapIncrement;
-          y = (y <= gapIncrement) || (y < canvasConfig.height - (gapIncrement * 3)) ? y + gapIncrement : y - gapIncrement;
+          x = (x <= gapIncrement) || (x < canvasConfig.width - 
+            (gapIncrement * 3)) ? x + gapIncrement : x - gapIncrement;
+          y = (y <= gapIncrement) || (y < canvasConfig.height - 
+            (gapIncrement * 3)) ? y + gapIncrement : y - gapIncrement;
           gapIncrement += 15 + Math.floor(Math.random() * (21));
         } else {
           break;
@@ -325,15 +339,6 @@ const drawFuncs = ((controlFuncs, dashboardFuncs, wallFuncs) => {
         < pacman.y));
   }
 
-  // const checkWalls = (x, y) => {
-  //   let newX, newY;
-  //   selectedWallConfig.forEach(wall => {
-  //     newX = wall.vertical ? (x === wall.x && (y >= wall.y && y <= wall.length)
-  //       ? x < 30 ? x > canvasConfig.width - 30 ? ) : ();
-  //   });
-  //   return { x, y };
-  // };
-
   function colorStage () {
     gameCtx.fillStyle = '#000';
     gameCtx.fillRect(0, 0, canvasConfig.width, canvasConfig.height);
@@ -347,7 +352,7 @@ const drawFuncs = ((controlFuncs, dashboardFuncs, wallFuncs) => {
     outerContainerPath.rect(25, 100, width, 100);
   };
 
-  const displayDialog = msg => {
+  const displayDialog = (msg1, msg2) => {
     gameCtx.save();
     gameCtx.fillStyle = '#f7f7f7';
     gameCtx.fill(outerContainerPath);
@@ -357,7 +362,8 @@ const drawFuncs = ((controlFuncs, dashboardFuncs, wallFuncs) => {
     gameCtx.shadowBlur = 2;
     gameCtx.shadowColor = 'rgba(0, 0, 0, 0.5)';
     gameCtx.fillStyle = '#000';
-    gameCtx.fillText(msg, 35, 150, canvasConfig.width - 80);
+    gameCtx.fillText(msg1, 35, 140, canvasConfig.width - 80);
+    msg2 && gameCtx.fillText(msg2, 35, 175, canvasConfig.width - 80)
     gameCtx.restore();
   };
 
@@ -398,12 +404,14 @@ const drawFuncs = ((controlFuncs, dashboardFuncs, wallFuncs) => {
   }
 
   function drawStartScreen () {
+    const msg1 = 'Press a directional key or swipe to start.';
+    const msg2 = 'Avoid the blue walls!'
     dashboardFuncs.setDashboardTimer();
     colorStage();
     initPacmanConfig();
     foodArr = [];
     drawPacMan();
-    displayDialog('Press a directional key or swipe to start');
+    displayDialog(msg1, msg2);
     // After initial Pacman drawing initiate the mouth movement config.
     pacmanConfig.mouthMid = true;
     controlFuncs.removeKeyControls(keyControlsRestartHandler);
@@ -420,7 +428,9 @@ const drawFuncs = ((controlFuncs, dashboardFuncs, wallFuncs) => {
 
   const drawEndScreen = () => {
     // Draw the end screen instructions.
-    displayDialog('Game over...\nPress a directional key or swipe to restart');
+    const msg1 = 'Game over...';
+    const msg2 = 'Press a directional key or swipe to restart';
+    displayDialog(msg1, msg2);
     // Reset Pacman back to start position.
     initPacmanConfig();
     controlFuncs.removeKeyControls(keyControlsHandler);
@@ -436,10 +446,10 @@ const drawFuncs = ((controlFuncs, dashboardFuncs, wallFuncs) => {
     drawPacMan();
     postDrawPacmanActions();
     checkTimerAndFood();
+    checkWallCollision();
     if (!gameStarted) return; // Break out of the animation if game has ended.
     preDrawFoodActions();
     drawFood();
-    preDrawWallsActions();
     drawWalls();
     animateProcess = setTimeout(() => { requestAnimationFrame(animate); }, 40);
   }

@@ -1,4 +1,7 @@
 const wallFuncs = (() => {
+  const WALL_WIDTH = 10;
+  const OFFSET = 10;
+  const OFFSET_LONG = 13;
   const wallConfigs = [];
 
   const initWall1 = (canvasConfig) => {
@@ -7,9 +10,9 @@ const wallFuncs = (() => {
     const y = Math.floor(canvasConfig.height / 2);
     const length = canvasConfig.width;
     const path = new Path2D();
-    path.rect(x, y, length, 10);
+    path.rect(x, y, length, WALL_WIDTH);
     const sensor = new Path2D();
-    sensor.rect(x - 10, y - 10, length + 20, 40);
+    sensor.rect(x - OFFSET, y - OFFSET_LONG, length + 20, 40);
     walls.push({ x, y, length, path, sensor });
     return walls;
   };
@@ -21,18 +24,54 @@ const wallFuncs = (() => {
     const y1 = Math.floor(canvasConfig.height / 2);
     const length1 = Math.floor(canvasConfig.width / 2);
     const path1 = new Path2D();
-    path1.rect(x1, y1, length1, 10);
+    path1.rect(x1, y1, length1, WALL_WIDTH);
     const sensor1 = new Path2D();
-    sensor1.rect(x1 - 10, y1 - 10, length1 + 20, 40);
+    sensor1.rect(x1 - OFFSET_LONG, y1 - OFFSET_LONG, length1 + 20, 40);
     walls.push({ x: x1, y: y1, length: length1, path: path1, sensor: sensor1 });
     // Create wall part 2.
     const x2 = Math.floor(canvasConfig.width / 2);
     const y2 = 0;
     const length2 = canvasConfig.height;
     const path2 = new Path2D();
-    path2.rect(x2, y2, length2, 10);
+    path2.rect(x2, y2, length2, WALL_WIDTH);
     const sensor2 = new Path2D();
-    sensor2.rect(x1 - 10, y1 - 10, length2 + 20, 40);
+    sensor2.rect(x2 - OFFSET_LONG, y2 - OFFSET_LONG, length2 + 20, 40);
+    walls.push({ x: x2, y: y2, length: length2, path: path2, sensor: sensor2 });
+    return walls;
+  };
+
+  const initWall3 = (canvasConfig) => {
+    let walls = [];
+    const x = Math.floor(canvasConfig.width / 2);
+    const y = 0;
+    const length = canvasConfig.height;
+    const path = new Path2D();
+    path.rect(x, y, WALL_WIDTH, length);
+    const sensor = new Path2D();
+    sensor.rect(x - OFFSET_LONG, y - OFFSET_LONG, 40, length + 20);
+    walls.push({ x, y, length, path, sensor });
+    return walls;
+  };
+
+  const initWall4 = (canvasConfig) => {
+    let walls = [];
+    // Create wall part 1.
+    const x1 = 0;
+    const y1 = 0;
+    const length1 = Math.floor(canvasConfig.height / 2);
+    const path1 = new Path2D();
+    path1.rect(x1, y1, WALL_WIDTH, length1);
+    const sensor1 = new Path2D();
+    sensor1.rect(x1 - OFFSET_LONG, y1 - OFFSET_LONG, 40, length1 + 20);
+    walls.push({ x: x1, y: y1, length: length1, path: path1, sensor: sensor1 });
+    // Create wall part 2.
+    const x2 = Math.floor(canvasConfig.width / 2);
+    const y2 = Math.floor(canvasConfig.height / 2);
+    const length2 = canvasConfig.height / 2;
+    const path2 = new Path2D();
+    path2.rect(x2, y2, WALL_WIDTH, length2);
+    const sensor2 = new Path2D();
+    sensor2.rect(x2 - OFFSET_LONG, y2 - OFFSET_LONG, 40, length2 + 20);
     walls.push({ x: x2, y: y2, length: length2, path: path2, sensor: sensor2 });
     return walls;
   };
@@ -41,6 +80,8 @@ const wallFuncs = (() => {
     initWalls (canvasConfig) {
       wallConfigs.push(initWall1(canvasConfig));
       wallConfigs.push(initWall2(canvasConfig));
+      wallConfigs.push(initWall3(canvasConfig));
+      wallConfigs.push(initWall4(canvasConfig));
     },
 
     selectWallConfig () {
