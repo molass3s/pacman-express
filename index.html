@@ -6,6 +6,7 @@
     user-scalable=no, maximum-scale=1" />
   <title>Pacman Express</title>
   <link rel="stylesheet" href="styles/pacman-express.css" />
+  <script src="scripts/wall-funcs.js" defer></script>
   <script src="scripts/dashboard-funcs.js" defer></script>
   <script src="scripts/control-funcs.js" defer></script>
   <script src="scripts/draw-funcs.js" defer></script>
@@ -14,10 +15,9 @@
 <body>
   <div id="content">
     <div>
-      <!-- I'm doing this to ensure that my font is loaded before canvas 
-        attempts to use it. -->
-      <div id="dashboard" 
-        style="font-family: vcr-osd-mono, Arial, Helvetica, sans-serif;">
+      <div id="dashboard">
+        <!-- I'm doing this to ensure that my font is loaded before canvas 
+          attempts to use it. -->
         <div id="dashboard-title">
           Pacman Express
         </div>
@@ -32,7 +32,8 @@
           </div>
         </div> 
       </div>
-      <canvas id="game-canvas">
+      <canvas id="game-canvas"
+        style="font-family: vcr-osd-mono, Arial, Helvetica, sans-serif;">
         <div>You have a seriously outdated browser...</div>
       </canvas>
     </div>

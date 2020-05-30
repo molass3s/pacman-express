@@ -1,4 +1,4 @@
-const drawFuncs = ((controlFuncs, dashboardFuncs) => {
+const drawFuncs = ((controlFuncs, dashboardFuncs, wallFuncs) => {
   // Canvas size for screens that are larger than 600x600
   const REG_WIDTH_HEIGHT = 600;
 
@@ -21,9 +21,10 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
   const MOVEMENT_DIFF = 10 
 
   // Food constants
+  FOOD_COUNT = 5;
   const FOOD_SIZE= 8; // Size of food, in radius.
   const FOOD_EATEN = 16; // If Pacman is within 8px of the food, it's eaten.
-  const FOOD_GAP = 20; // The space, in px, that food should be spaced apart.
+  const FOOD_GAP = 30; // The space, in px, that food should be spaced apart.
 
   let gameCanvas;
   let gameCtx;
@@ -55,20 +56,28 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
 
   // Message containers
   let outerContainerPath;
-  let innerContainerPath;
 
-  const keyControlsHandler = e => {
+  // Selected wall
+  let selectedWallConfig;
+
+  const isArrowKeyPressed = (e, arrowPressedHandler) => {
     const direction = controlFuncs.keyPressed(e);
-    
+
     if (controlFuncs.isArrowLeft(direction) || controlFuncs.isArrowUp(direction)
-      || controlFuncs.isArrowRight(direction) || controlFuncs.isArrowDown(direction)) {
-      pacmanConfig.direction = direction;
+      || controlFuncs.isArrowRight(direction) 
+      || controlFuncs.isArrowDown(direction)) {
       e.preventDefault();
+      arrowPressedHandler(direction);
+      return true;
     }
     else {
-      return;
+      return false;
     }
-    !gameStarted && startGame();
+  };
+
+  const keyControlsHandler = e => {
+    isArrowKeyPressed(e, (direction) => pacmanConfig.direction = direction) 
+      && !gameStarted && startGame();
   }
 
   const swipeControlsHandler = swipeDirection => {
@@ -77,7 +86,7 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
   }
 
   const keyControlsRestartHandler = e => {
-    resetDashboard();
+    isArrowKeyPressed(e, resetDashboard); 
   }
 
   const swipeConstrolsRestartHandler = swipeDirection => {
@@ -200,8 +209,9 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     const pacmanX = pacmanConfig.x;
     const pacmanY = pacmanConfig.y;
     const lastFoodCount = foodArr.length;
+    // We only care about the food that's not eaten.
     foodArr = foodArr.filter(food => {
-      return checkProximity(food, { x: pacmanX, y: pacmanY}, FOOD_EATEN, false);
+      return findUneatenFood(food, { x: pacmanX, y: pacmanY}, FOOD_EATEN, false);
     });
 
     if (foodArr.length < lastFoodCount) {
@@ -212,8 +222,28 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
   function drawFood () {
     foodArr.forEach(food => {
       gameCtx.beginPath();
-      gameCtx.fill(food.path);
+      gameCtx.fill(food.food);
     });
+  }
+
+  const preDrawWallsActions = () => {
+    // TODO check if Pacman ran into a wall.
+  };
+
+  const drawWalls = () => {
+    gameCtx.save()
+    selectedWallConfig.forEach(wall => {
+      gameCtx.lineCap = 'round';
+      gameCtx.lineJoin = 'round';
+      gameCtx.fillStyle = '#1919A6'
+      gameCtx.fill(wall.path);
+    });
+    gameCtx.restore();
+  };
+
+  const drawSensor = (sensor) => {
+    gameCtx.fillStyle = 'rgba(0, 0, 0, 0)';
+    gameCtx.fill(sensor);
   }
 
   // Check for existence of food and status of timer
@@ -227,32 +257,56 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
       drawEndScreen();
     } 
     if (leftovers === 0) {
+      // Set
+      selectedWallConfig = wallFuncs.selectWallConfig();
       initFood();
       dashboardFuncs.resetDashboardTimer();
     }
   }
 
   function initFood () {
+    const canvasWidth = canvasConfig.width;
+    const canvasHeight = canvasConfig.height;
     let usedCoordsArr = []
-    for (let i = 0; i < 5; i++) {
+    
+    for (let i = 0; i < FOOD_COUNT; i++) {
       let x = getRandomCoord(canvasConfig.width);
       let y = getRandomCoord(canvasConfig.height);
+      // let x = 71;
+      // let y = 312;
+      let gapIncrement = FOOD_GAP;
       
-      // Prevent food from being within such close proximity of each other,
-      // specifically FOOD_GAP px.
-      let nearbyFood = usedCoordsArr.find(coord => {
-        return checkProximity(coord, { x, y }, FOOD_GAP, true);
-      });
-      if (nearbyFood) {
-        x = nearbyFood.x <= (FOOD_GAP + 5) ? x + FOOD_GAP : x - FOOD_GAP;
-        y = nearbyFood.y <= (FOOD_GAP + 5) ? y + FOOD_GAP : y - FOOD_GAP;
+      // We stay in this loop until we find a good place to put new food.
+      while (true) {
+        // Prevent food from being within such close proximity of each other by
+        // using the sensor around the food.
+        let nearbyFood = foodArr.some(food => {
+          return gameCtx.isPointInPath(food.sensor, x, y);
+        });
+        // Food cannot collide with a wall.
+        let affectedWall = selectedWallConfig.some(wall => {
+          return gameCtx.isPointInPath(wall.sensor, x, y);
+        });
+        
+        if (affectedWall || nearbyFood) {
+          // If there's nearby food or new food is colliding with a wall, move 
+          // new food +/- gapIncrement pixels over.
+          x = (x <= gapIncrement) || (x < canvasConfig.width - (gapIncrement * 3)) ? x + gapIncrement : x - gapIncrement;
+          y = (y <= gapIncrement) || (y < canvasConfig.height - (gapIncrement * 3)) ? y + gapIncrement : y - gapIncrement;
+          gapIncrement += 15 + Math.floor(Math.random() * (21));
+        } else {
+          break;
+        }
       }
-
+      
       usedCoordsArr.push({ x, y });
-      let path = new Path2D();
-      path.fillStyle = '#ffff00';
-      path.arc(x, y, FOOD_SIZE, 0, Math.PI * 2, true);
-      foodArr.push({ x, y, path });
+      // The actual food.
+      let food = new Path2D();
+      food.arc(x, y, FOOD_SIZE, 0, Math.PI * 2, true);
+      // A transparent sensor used for proximity checks (e.g other food).
+      let foodSensor = new Path2D();
+      foodSensor.arc(x, y, FOOD_SIZE + 20, 0, Math.PI * 2, true);
+      foodArr.push({ x, y, food, sensor: foodSensor });
     }
   }
 
@@ -263,24 +317,22 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     return 20 + Math.floor(Math.random() * (max - 40));
   }
 
-  // Check the surrounding. Source is the center, target is the potential 
-  // surrounding object, activation is the distance on which something happens,
-  // and positive is if we want to find something within activation distance (
-  // a false value means we want to make sure nothing is within activation
-  // distance).
-  function checkProximity (source, target, activation, positive) {
-    if (positive) {
-      return (((source.x - activation) < target.x) && ((source.x + activation) 
-        > target.x)) 
-        && (((source.y - activation) < target.y) || ((source.y + activation) 
-        > target.y));
-    } else {
-      return (((source.x - activation) > target.x) || ((source.x + activation) 
-        < target.x)) 
-        || (((source.y - activation) > target.y) || ((source.y + activation) 
-        < target.y));
-    }
+  // Find uneaten food
+  function findUneatenFood (food, pacman, activation) {
+    return (((food.x - activation) > pacman.x) || ((food.x + activation) 
+        < pacman.x)) 
+        || (((food.y - activation) > pacman.y) || ((food.y + activation) 
+        < pacman.y));
   }
+
+  // const checkWalls = (x, y) => {
+  //   let newX, newY;
+  //   selectedWallConfig.forEach(wall => {
+  //     newX = wall.vertical ? (x === wall.x && (y >= wall.y && y <= wall.length)
+  //       ? x < 30 ? x > canvasConfig.width - 30 ? ) : ();
+  //   });
+  //   return { x, y };
+  // };
 
   function colorStage () {
     gameCtx.fillStyle = '#000';
@@ -299,7 +351,7 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     gameCtx.save();
     gameCtx.fillStyle = '#f7f7f7';
     gameCtx.fill(outerContainerPath);
-    gameCtx.font = '1.5rem vcr-osd-mono';
+    gameCtx.font = '24px vcr-osd-mono';
     gameCtx.shadowOffsetX = 2;
     gameCtx.shadowOffsetY = 2;
     gameCtx.shadowBlur = 2;
@@ -309,6 +361,8 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     gameCtx.restore();
   };
 
+  // This checks the map edges to create the loop effect when Pacman hits an
+  // edge.
   function checkEdges () {
     const pacmanX = pacmanConfig.x;
     const pacmanY = pacmanConfig.y;
@@ -339,6 +393,7 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     gameCanvas.height = canvasConfig.height;
 
     initDialogContainers();
+    wallFuncs.initWalls(canvasConfig);
     drawStartScreen();
   }
 
@@ -375,6 +430,7 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
   }
 
   function animate () {
+    // Order matters here!!!
     colorStage();
     preDrawPacmanActions();
     drawPacMan();
@@ -383,6 +439,8 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
     if (!gameStarted) return; // Break out of the animation if game has ended.
     preDrawFoodActions();
     drawFood();
+    preDrawWallsActions();
+    drawWalls();
     animateProcess = setTimeout(() => { requestAnimationFrame(animate); }, 40);
   }
 
@@ -392,49 +450,6 @@ const drawFuncs = ((controlFuncs, dashboardFuncs) => {
       gameCtx = ctx;
       window.addEventListener('resize', () => updateCanvasConfig());
       updateCanvasConfig();
-    },
-
-    // Draws the Snake Game stage
-    drawStage: (gameCtx) => {
-      // speech bubble shape test
-      // gameCtx.beginPath();
-      // gameCtx.moveTo(150, 50);
-      // gameCtx.quadraticCurveTo(250, 50, 250, 100);
-      // gameCtx.quadraticCurveTo(250, 150, 140, 150);
-      // gameCtx.quadraticCurveTo(140, 200, 100, 200);
-      // gameCtx.quadraticCurveTo(130, 195, 120, 150);
-      // gameCtx.quadraticCurveTo(50, 150, 50, 100);
-      // gameCtx.quadraticCurveTo(50, 50, 150, 50);
-      // gameCtx.stroke();
-
-      // pacman and ghost shape test
-      
-      // gameCtx.fillStyle = 'white';
-      // gameCtx.beginPath();
-      // gameCtx.moveTo(150, 120);
-      // gameCtx.lineTo(150, 90);
-      // gameCtx.bezierCurveTo(160, 65, 190, 65, 200, 90);
-      // gameCtx.lineTo(200, 120);
-      // gameCtx.lineTo(192, 115);
-      // gameCtx.lineTo(184, 120);
-      // gameCtx.lineTo(176, 115);
-      // gameCtx.lineTo(168, 120);
-      // gameCtx.lineTo(160, 115);
-      // gameCtx.fill();
-
-      // radial gradient test
-      let radgrad = gameCtx.createRadialGradient(45, 45, 10, 52, 50, 30);
-      radgrad.addColorStop(0, '#A7D30C');
-      radgrad.addColorStop(0.9, '#019F62');
-      radgrad.addColorStop(1, 'rgba(1, 159, 98, 0)');
-      gameCtx.fillStyle = radgrad;
-      gameCtx.fillRect(0, 0, 300, 300);
-    },
-
-    drawText (gameCtx) {
-      gameCtx.font = '48px sans-serif';
-      gameCtx.fillStyle = '#33d';
-      gameCtx.strokeText('Snake', 150, 150);
     }
   };
-})(controlFuncs, dashboardFuncs);
+})(controlFuncs, dashboardFuncs, wallFuncs);

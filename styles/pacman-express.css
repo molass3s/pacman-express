@@ -6,6 +6,7 @@
 
 * {
   box-sizing: content-box;
+  font-family: vcr-osd-mono, Arial, Helvetica, sans-serif;
 }
 
 /* set the root em */
