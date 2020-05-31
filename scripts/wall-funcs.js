@@ -1,9 +1,10 @@
 const wallFuncs = (() => {
   const WALL_WIDTH = 10;
   const OFFSET = 10;
-  const OFFSET_LONG = 13;
+  const OFFSET_LONG = 14;
   const wallConfigs = [];
 
+  // Horizontal wall across
   const initWall1 = (canvasConfig) => {
     let walls = [];
     const x = 0;
@@ -12,11 +13,13 @@ const wallFuncs = (() => {
     const path = new Path2D();
     path.rect(x, y, length, WALL_WIDTH);
     const sensor = new Path2D();
-    sensor.rect(x - OFFSET, y - OFFSET_LONG, length + 20, 40);
+    sensor.rect(x - OFFSET, y - OFFSET_LONG, length + 40, 40);
     walls.push({ x, y, length, path, sensor });
     return walls;
   };
 
+  // Two horizontal halved walls. One at the top-right page, other mid-left 
+  // page.
   const initWall2 = (canvasConfig) => {
     let walls = [];
     // Create wall part 1.
@@ -26,7 +29,7 @@ const wallFuncs = (() => {
     const path1 = new Path2D();
     path1.rect(x1, y1, length1, WALL_WIDTH);
     const sensor1 = new Path2D();
-    sensor1.rect(x1 - OFFSET_LONG, y1 - OFFSET_LONG, length1 + 20, 40);
+    sensor1.rect(x1, y1 - OFFSET_LONG, length1 + 18, 40);
     walls.push({ x: x1, y: y1, length: length1, path: path1, sensor: sensor1 });
     // Create wall part 2.
     const x2 = Math.floor(canvasConfig.width / 2);
@@ -35,11 +38,12 @@ const wallFuncs = (() => {
     const path2 = new Path2D();
     path2.rect(x2, y2, length2, WALL_WIDTH);
     const sensor2 = new Path2D();
-    sensor2.rect(x2 - OFFSET_LONG, y2 - OFFSET_LONG, length2 + 20, 40);
+    sensor2.rect(x2 - 18, y2 - OFFSET_LONG, length2 + 50, 40);
     walls.push({ x: x2, y: y2, length: length2, path: path2, sensor: sensor2 });
     return walls;
   };
 
+  // Vertical wall from top to bottom.
   const initWall3 = (canvasConfig) => {
     let walls = [];
     const x = Math.floor(canvasConfig.width / 2);
@@ -53,6 +57,7 @@ const wallFuncs = (() => {
     return walls;
   };
 
+  // Two vertical halved walls. One at the top-left page, other mid-bottom page.
   const initWall4 = (canvasConfig) => {
     let walls = [];
     // Create wall part 1.
@@ -62,16 +67,16 @@ const wallFuncs = (() => {
     const path1 = new Path2D();
     path1.rect(x1, y1, WALL_WIDTH, length1);
     const sensor1 = new Path2D();
-    sensor1.rect(x1 - OFFSET_LONG, y1 - OFFSET_LONG, 40, length1 + 20);
+    sensor1.rect(x1 - OFFSET_LONG, y1, 40, length1 + 18);
     walls.push({ x: x1, y: y1, length: length1, path: path1, sensor: sensor1 });
     // Create wall part 2.
     const x2 = Math.floor(canvasConfig.width / 2);
     const y2 = Math.floor(canvasConfig.height / 2);
     const length2 = canvasConfig.height / 2;
     const path2 = new Path2D();
-    path2.rect(x2, y2, WALL_WIDTH, length2);
+    path2.rect(x2, y2 - 20, WALL_WIDTH, length2 + 20);
     const sensor2 = new Path2D();
-    sensor2.rect(x2 - OFFSET_LONG, y2 - OFFSET_LONG, 40, length2 + 20);
+    sensor2.rect(x2 - OFFSET_LONG, y2 - 38, 40, length2 + 40);
     walls.push({ x: x2, y: y2, length: length2, path: path2, sensor: sensor2 });
     return walls;
   };
